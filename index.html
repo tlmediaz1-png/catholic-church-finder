@@ -2,66 +2,546 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Catholic Church Finder UK v2.0</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Catholic Church Finder UK</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-body{font-family:Arial,sans-serif;background:#f5f5f5;margin:0;padding:20px}
-.container{max-width:900px;margin:auto}
-.card{background:#fff;padding:15px;margin:12px 0;border-radius:10px}
-button{padding:10px 14px;margin:4px;cursor:pointer}
-input{padding:10px;width:100%;box-sizing:border-box}
-.notice{background:#fff3cd;padding:10px;border-radius:8px;margin-bottom:10px}
+  :root {
+    --navy: #1a2744;
+    --gold: #c9a84c;
+    --gold-light: #f0d98a;
+    --cream: #fdf8f0;
+    --card-bg: #ffffff;
+    --text: #1a2744;
+    --muted: #6b7280;
+    --border: #e5e0d5;
+    --red: #b91c1c;
+    --green: #15803d;
+    --shadow: 0 2px 12px rgba(26,39,68,0.10);
+    --radius: 14px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Source Sans 3', sans-serif;
+    background: var(--cream);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  header {
+    background: var(--navy);
+    color: #fff;
+    padding: 28px 20px 22px;
+    text-align: center;
+    position: relative;
+  }
+  header::after {
+    content: '';
+    display: block;
+    height: 4px;
+    background: linear-gradient(90deg, var(--gold), var(--gold-light), var(--gold));
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+  }
+  .cross-icon {
+    font-size: 2rem;
+    display: block;
+    margin-bottom: 6px;
+    opacity: 0.9;
+  }
+  header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.4rem, 5vw, 2rem);
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    color: #fff;
+  }
+  header p {
+    font-size: 0.88rem;
+    color: rgba(255,255,255,0.65);
+    margin-top: 4px;
+  }
+
+  /* SEARCH PANEL */
+  .search-panel {
+    max-width: 640px;
+    margin: 24px auto 0;
+    padding: 0 16px;
+  }
+
+  .gps-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    padding: 16px;
+    background: var(--navy);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    box-shadow: var(--shadow);
+  }
+  .gps-btn:active { transform: scale(0.98); }
+  .gps-btn:hover { background: #253660; }
+  .gps-btn span.icon { font-size: 1.25rem; }
+
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 18px 0;
+    color: var(--muted);
+    font-size: 0.82rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .town-row {
+    display: flex;
+    gap: 8px;
+  }
+  .town-row input {
+    flex: 1;
+    padding: 14px 16px;
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 1rem;
+    color: var(--text);
+    background: #fff;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .town-row input:focus { border-color: var(--gold); }
+  .town-row input::placeholder { color: #aaa; }
+  .town-row button {
+    padding: 14px 20px;
+    background: var(--gold);
+    color: var(--navy);
+    border: none;
+    border-radius: var(--radius);
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    white-space: nowrap;
+  }
+  .town-row button:hover { background: var(--gold-light); }
+  .town-row button:active { transform: scale(0.97); }
+
+  /* STATUS */
+  #status {
+    max-width: 640px;
+    margin: 16px auto 0;
+    padding: 0 16px;
+    min-height: 28px;
+  }
+  .status-msg {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.92rem;
+    font-weight: 500;
+    padding: 10px 14px;
+    border-radius: 8px;
+  }
+  .status-msg.loading {
+    background: #e8f0fe;
+    color: #1e40af;
+  }
+  .status-msg.error {
+    background: #fee2e2;
+    color: var(--red);
+  }
+  .status-msg.success {
+    background: #dcfce7;
+    color: var(--green);
+  }
+  .spinner {
+    width: 16px; height: 16px;
+    border: 2px solid #93c5fd;
+    border-top-color: #1e40af;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    flex-shrink: 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* RESULTS */
+  #results {
+    max-width: 640px;
+    margin: 16px auto 0;
+    padding: 0 16px 24px;
+  }
+  .results-header {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.05rem;
+    color: var(--muted);
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .results-header strong { color: var(--text); }
+
+  /* CHURCH CARD */
+  .church-card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 18px 18px 14px;
+    margin-bottom: 14px;
+    border-left: 4px solid var(--gold);
+    animation: fadeUp 0.3s ease both;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+  .church-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.08rem;
+    font-weight: 600;
+    color: var(--navy);
+    line-height: 1.3;
+    flex: 1;
+  }
+  .distance-badge {
+    background: var(--navy);
+    color: var(--gold-light);
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 20px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .church-address {
+    font-size: 0.88rem;
+    color: var(--muted);
+    margin-bottom: 12px;
+    line-height: 1.5;
+    display: flex;
+    align-items: flex-start;
+    gap: 5px;
+  }
+  .card-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+  }
+  .action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 8px 13px;
+    border-radius: 8px;
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    text-decoration: none;
+    transition: opacity 0.15s, transform 0.1s;
+    line-height: 1;
+  }
+  .action-btn:active { transform: scale(0.96); }
+  .btn-directions { background: #1e40af; color: #fff; }
+  .btn-website   { background: #166534; color: #fff; }
+  .btn-phone     { background: #b45309; color: #fff; }
+  .btn-share     { background: #4b5563; color: #fff; }
+  .action-btn:hover { opacity: 0.88; }
+
+  /* DISCLAIMER */
+  .disclaimer {
+    max-width: 640px;
+    margin: 8px auto 32px;
+    padding: 12px 18px;
+    background: #fff8e6;
+    border: 1px solid #f0d98a;
+    border-radius: 10px;
+    font-size: 0.82rem;
+    color: #92400e;
+    text-align: center;
+    line-height: 1.5;
+    margin-left: 16px;
+    margin-right: 16px;
+  }
+  @media (min-width: 672px) {
+    .disclaimer { margin-left: auto; margin-right: auto; }
+  }
+  .disclaimer strong { display: block; margin-bottom: 2px; }
+
+  footer {
+    text-align: center;
+    padding: 16px;
+    color: var(--muted);
+    font-size: 0.78rem;
+    border-top: 1px solid var(--border);
+  }
 </style>
 </head>
 <body>
-<div class="container">
-<h1>✝ Catholic Church Finder UK</h1>
-<div class="notice">Mass times may change. Please check the parish website before travelling.</div>
 
-<button onclick="findNearby()">📍 Find Churches Near Me</button>
+<header>
+  <span class="cross-icon">✝</span>
+  <h1>Catholic Church Finder UK</h1>
+  <p>Find the nearest Catholic church &amp; Mass times</p>
+</header>
 
-<h3>Search by Town</h3>
-<input id="town" placeholder="Enter town name">
-<button onclick="searchTown()">Search</button>
+<div class="search-panel">
+  <button class="gps-btn" onclick="findNearby()">
+    <span class="icon">📍</span>
+    Find Churches Near My Location
+  </button>
+
+  <div class="divider">or search by town</div>
+
+  <div class="town-row">
+    <input type="text" id="town" placeholder="e.g. Birmingham, Leeds, Exeter…" 
+           onkeydown="if(event.key==='Enter')searchTown()">
+    <button onclick="searchTown()">Search</button>
+  </div>
+</div>
 
 <div id="status"></div>
 <div id="results"></div>
+
+<div class="disclaimer" id="disclaimer" style="display:none">
+  <strong>⚠️ Please Note</strong>
+  Mass times may change. Always check the parish website or contact the church directly before travelling.
 </div>
 
+<footer>Data: OpenStreetMap contributors · Nominatim · Overpass API</footer>
+
 <script>
-function miles(km){return (km*0.621371).toFixed(1);}
-function distance(lat1,lon1,lat2,lon2){
-const R=6371;
-const dLat=(lat2-lat1)*Math.PI/180;
-const dLon=(lon2-lon1)*Math.PI/180;
-const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
-return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+// ── Utilities ────────────────────────────────────────────────
+function toMiles(km) {
+  return (km * 0.621371).toFixed(1);
 }
-async function loadChurches(lat,lon){
-document.getElementById('status').innerText='Searching...';
-const query=`[out:json];(node["amenity"="place_of_worship"]["religion"="christian"]["denomination"="catholic"](around:30000,${lat},${lon});way["amenity"="place_of_worship"]["religion"="christian"]["denomination"="catholic"](around:30000,${lat},${lon});relation["amenity"="place_of_worship"]["religion"="christian"]["denomination"="catholic"](around:30000,${lat},${lon}););out center tags;`;
-const r=await fetch('https://overpass-api.de/api/interpreter',{method:'POST',body:query});
-const data=await r.json();
-const results=document.getElementById('results');
-results.innerHTML='';
-data.elements.forEach(el=>{
-const clat=el.lat || (el.center&&el.center.lat);
-const clon=el.lon || (el.center&&el.center.lon);
-const name=(el.tags&&el.tags.name)||'Catholic Church';
-const addr=(el.tags&&el.tags['addr:street'])||'Address unavailable';
-const dist=miles(distance(lat,lon,clat,clon));
-results.innerHTML += `<div class="card"><h3>${name}</h3><p>📍 ${addr}</p><p>📏 ${dist} miles away</p><a target="_blank" href="https://maps.google.com/?q=${clat},${clon}">Directions</a></div>`;
-});
-document.getElementById('status').innerText='Search complete';
+
+function haversine(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2
+          + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180)
+          * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
-function findNearby(){
-navigator.geolocation.getCurrentPosition(p=>loadChurches(p.coords.latitude,p.coords.longitude),()=>alert('Location permission required'));
+
+function buildAddress(tags) {
+  const parts = [
+    tags['addr:housenumber'] && tags['addr:street']
+      ? `${tags['addr:housenumber']} ${tags['addr:street']}`
+      : tags['addr:street'],
+    tags['addr:city'] || tags['addr:town'] || tags['addr:village'],
+    tags['addr:postcode']
+  ].filter(Boolean);
+  return parts.length ? parts.join(', ') : 'Address not listed';
 }
-async function searchTown(){
-const town=document.getElementById('town').value;
-const r=await fetch('https://nominatim.openstreetmap.org/search?format=json&q='+encodeURIComponent(town));
-const data=await r.json();
-if(data.length){loadChurches(data[0].lat,data[0].lon);}
+
+function setStatus(type, html) {
+  const el = document.getElementById('status');
+  if (!type) { el.innerHTML = ''; return; }
+  const spinner = type === 'loading' ? '<div class="spinner"></div>' : '';
+  el.innerHTML = `<div class="status-msg ${type}">${spinner}${html}</div>`;
+}
+
+// ── Main search ──────────────────────────────────────────────
+async function loadChurches(lat, lon, label) {
+  setStatus('loading', `Searching for Catholic churches near <strong>${label}</strong>…`);
+  document.getElementById('results').innerHTML = '';
+  document.getElementById('disclaimer').style.display = 'none';
+
+  const radius = 50000; // 50 km
+  const query = `
+    [out:json][timeout:25];
+    (
+      node["amenity"="place_of_worship"]["religion"="christian"]["denomination"="catholic"](around:${radius},${lat},${lon});
+      way["amenity"="place_of_worship"]["religion"="christian"]["denomination"="catholic"](around:${radius},${lat},${lon});
+      relation["amenity"="place_of_worship"]["religion"="christian"]["denomination"="catholic"](around:${radius},${lat},${lon});
+    );
+    out center tags;
+  `;
+
+  let data;
+  try {
+    const res = await fetch('https://overpass-api.de/api/interpreter', {
+      method: 'POST',
+      body: query
+    });
+    if (!res.ok) throw new Error('Overpass API error');
+    data = await res.json();
+  } catch (e) {
+    setStatus('error', '❌ Could not reach the church database. Please try again in a moment.');
+    return;
+  }
+
+  // ── Deduplicate & enrich ─────────────────────────────────
+  const seen = new Set();
+  const churches = [];
+
+  for (const el of data.elements) {
+    const clat = el.lat ?? el.center?.lat;
+    const clon = el.lon  ?? el.center?.lon;
+    if (!clat || !clon) continue;
+
+    const tags = el.tags || {};
+    const name = tags.name || tags['name:en'] || 'Catholic Church';
+    const key  = `${name}|${Math.round(clat * 1000)}|${Math.round(clon * 1000)}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+
+    const km   = haversine(lat, lon, clat, clon);
+    const addr = buildAddress(tags);
+
+    churches.push({
+      name,
+      addr,
+      km,
+      miles: parseFloat(toMiles(km)),
+      clat,
+      clon,
+      website: tags.website || tags['contact:website'] || '',
+      phone:   tags.phone   || tags['contact:phone']   || ''
+    });
+  }
+
+  // ── Sort nearest → furthest, limit 20 ───────────────────
+  churches.sort((a, b) => a.km - b.km);
+  const top = churches.slice(0, 20);
+
+  // ── Render ───────────────────────────────────────────────
+  if (top.length === 0) {
+    setStatus('error', '⚠️ No Catholic churches found within 50km. Try a different location.');
+    return;
+  }
+
+  setStatus('success', `✅ Found <strong>${churches.length}</strong> Catholic churches — showing the nearest <strong>${top.length}</strong>`);
+
+  const container = document.getElementById('results');
+  container.innerHTML = `<div class="results-header">Nearest churches to <strong>${label}</strong></div>`;
+
+  top.forEach((c, i) => {
+    const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${c.clat},${c.clon}`;
+    const shareText     = encodeURIComponent(`${c.name} — ${c.addr} (${c.miles} miles away)`);
+    const shareUrl      = encodeURIComponent(`https://maps.google.com/?q=${c.clat},${c.clon}`);
+
+    let actions = `
+      <a class="action-btn btn-directions" href="${directionsUrl}" target="_blank" rel="noopener">🗺️ Directions</a>
+    `;
+    if (c.website) {
+      const ws = c.website.startsWith('http') ? c.website : 'https://' + c.website;
+      actions += `<a class="action-btn btn-website" href="${ws}" target="_blank" rel="noopener">🌐 Website</a>`;
+    }
+    if (c.phone) {
+      actions += `<a class="action-btn btn-phone" href="tel:${c.phone.replace(/\s/g,'')}">☎️ Call</a>`;
+    }
+    actions += `<button class="action-btn btn-share" onclick="shareChurch('${shareText}','${shareUrl}')">📤 Share</button>`;
+
+    const card = document.createElement('div');
+    card.className = 'church-card';
+    card.style.animationDelay = `${i * 0.04}s`;
+    card.innerHTML = `
+      <div class="card-top">
+        <div class="church-name">${c.name}</div>
+        <div class="distance-badge">📏 ${c.miles} mi</div>
+      </div>
+      <div class="church-address">📍 ${c.addr}</div>
+      <div class="card-actions">${actions}</div>
+    `;
+    container.appendChild(card);
+  });
+
+  document.getElementById('disclaimer').style.display = 'block';
+}
+
+// ── Share helper ─────────────────────────────────────────────
+function shareChurch(text, url) {
+  const decoded = decodeURIComponent(text);
+  const decodedUrl = decodeURIComponent(url);
+  if (navigator.share) {
+    navigator.share({ title: 'Catholic Church', text: decoded, url: decodedUrl }).catch(() => {});
+  } else {
+    navigator.clipboard.writeText(decoded + '\n' + decodedUrl)
+      .then(() => alert('Church details copied to clipboard!'))
+      .catch(() => alert(decoded + '\n' + decodedUrl));
+  }
+}
+
+// ── GPS search ───────────────────────────────────────────────
+function findNearby() {
+  if (!navigator.geolocation) {
+    setStatus('error', '❌ Your browser does not support GPS location.');
+    return;
+  }
+  setStatus('loading', 'Getting your location…');
+  navigator.geolocation.getCurrentPosition(
+    pos => loadChurches(pos.coords.latitude, pos.coords.longitude, 'your location'),
+    err => {
+      const msgs = {
+        1: 'Location permission was denied. Please allow location access and try again.',
+        2: 'Your location could not be determined. Please try a town search instead.',
+        3: 'Location request timed out. Please try again.'
+      };
+      setStatus('error', '❌ ' + (msgs[err.code] || 'Location error. Please try a town search.'));
+    },
+    { timeout: 10000 }
+  );
+}
+
+// ── Town search ──────────────────────────────────────────────
+async function searchTown() {
+  const town = document.getElementById('town').value.trim();
+  if (!town) {
+    setStatus('error', '⚠️ Please enter a town name.');
+    return;
+  }
+  setStatus('loading', `Looking up <strong>${town}</strong>…`);
+
+  let geo;
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/search?format=json&countrycodes=gb&limit=1&q=${encodeURIComponent(town)}`,
+      { headers: { 'Accept-Language': 'en' } }
+    );
+    geo = await res.json();
+  } catch (e) {
+    setStatus('error', '❌ Could not look up that town. Please check your connection.');
+    return;
+  }
+
+  if (!geo || geo.length === 0) {
+    setStatus('error', `❌ Could not find "<strong>${town}</strong>" in the UK. Please check the spelling.`);
+    return;
+  }
+
+  loadChurches(parseFloat(geo[0].lat), parseFloat(geo[0].lon), geo[0].display_name.split(',')[0]);
 }
 </script>
 </body>
