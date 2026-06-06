@@ -3,106 +3,65 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Nearest Catholic Church Finder</title>
+<title>Catholic Church Finder UK v2.0</title>
 <style>
-body{font-family:Arial,sans-serif;max-width:900px;margin:20px auto;padding:20px}
-button{padding:10px 16px;font-size:16px;cursor:pointer}
-.card{border:1px solid #ccc;border-radius:8px;padding:12px;margin:10px 0}
-.small{color:#555}
+body{font-family:Arial,sans-serif;background:#f5f5f5;margin:0;padding:20px}
+.container{max-width:900px;margin:auto}
+.card{background:#fff;padding:15px;margin:12px 0;border-radius:10px}
+button{padding:10px 14px;margin:4px;cursor:pointer}
+input{padding:10px;width:100%;box-sizing:border-box}
+.notice{background:#fff3cd;padding:10px;border-radius:8px;margin-bottom:10px}
 </style>
 </head>
 <body>
-<h1>Nearest Catholic Church Finder</h1>
-<p>Uses your current location and OpenStreetMap data to find nearby Catholic churches.</p>
+<div class="container">
+<h1>✝ Catholic Church Finder UK</h1>
+<div class="notice">Mass times may change. Please check the parish website before travelling.</div>
 
-<button onclick="findChurches()">Find Nearby Catholic Churches</button>
+<button onclick="findNearby()">📍 Find Churches Near Me</button>
+
+<h3>Search by Town</h3>
+<input id="town" placeholder="Enter town name">
+<button onclick="searchTown()">Search</button>
 
 <div id="status"></div>
 <div id="results"></div>
+</div>
 
 <script>
-async function findChurches(){
-  const status=document.getElementById('status');
-  const results=document.getElementById('results');
-  results.innerHTML='';
-  status.innerHTML='Getting your location...';
-
-  navigator.geolocation.getCurrentPosition(async pos=>{
-    const lat=pos.coords.latitude;
-    const lon=pos.coords.longitude;
-
-    status.innerHTML='Searching...';
-
-    const query=`
-    [out:json];
-    (
-      node["amenity"="place_of_worship"]["religion"="christian"]["denomination"="catholic"](around:30000,${lat},${lon});
-      way["amenity"="place_of_worship"]["religion"="christian"]["denomination"="catholic"](around:30000,${lat},${lon});
-      relation["amenity"="place_of_worship"]["religion"="christian"]["denomination"="catholic"](around:30000,${lat},${lon});
-    );
-    out center tags;
-    `;
-
-    try{
-      const response=await fetch("https://overpass-api.de/api/interpreter",{
-        method:"POST",
-        body:query
-      });
-
-      const data=await response.json();
-
-      const churches=data.elements.map(el=>{
-        const clat=el.lat || (el.center && el.center.lat);
-        const clon=el.lon || (el.center && el.center.lon);
-
-        const d=distance(lat,lon,clat,clon);
-
-        return {
-          name:(el.tags && el.tags.name) || "Catholic Church",
-          distance:d,
-          lat:clat,
-          lon:clon
-        };
-      }).sort((a,b)=>a.distance-b.distance);
-
-      if(!churches.length){
-        status.innerHTML="No Catholic churches found within 30km.";
-        return;
-      }
-
-      status.innerHTML=`Found ${churches.length} churches.`;
-
-      churches.slice(0,10).forEach(c=>{
-        const div=document.createElement('div');
-        div.className='card';
-        div.innerHTML=`
-          <strong>${c.name}</strong><br>
-          <span class="small">${c.distance.toFixed(1)} km away</span><br><br>
-          <a target="_blank" href="https://www.google.com/maps/search/?api=1&query=${c.lat},${c.lon}">
-          Open in Google Maps
-          </a>
-        `;
-        results.appendChild(div);
-      });
-
-    }catch(err){
-      status.innerHTML='Error searching for churches.';
-      console.error(err);
-    }
-
-  }, err=>{
-    status.innerHTML='Location permission is required.';
-  });
-}
-
+function miles(km){return (km*0.621371).toFixed(1);}
 function distance(lat1,lon1,lat2,lon2){
-  const R=6371;
-  const dLat=(lat2-lat1)*Math.PI/180;
-  const dLon=(lon2-lon1)*Math.PI/180;
-  const a=Math.sin(dLat/2)**2 +
-    Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*
-    Math.sin(dLon/2)**2;
-  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+const R=6371;
+const dLat=(lat2-lat1)*Math.PI/180;
+const dLon=(lon2-lon1)*Math.PI/180;
+const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+async function loadChurches(lat,lon){
+document.getElementById('status').innerText='Searching...';
+const query=`[out:json];(node["amenity"="place_of_worship"]["religion"="christian"]["denomination"="catholic"](around:30000,${lat},${lon});way["amenity"="place_of_worship"]["religion"="christian"]["denomination"="catholic"](around:30000,${lat},${lon});relation["amenity"="place_of_worship"]["religion"="christian"]["denomination"="catholic"](around:30000,${lat},${lon}););out center tags;`;
+const r=await fetch('https://overpass-api.de/api/interpreter',{method:'POST',body:query});
+const data=await r.json();
+const results=document.getElementById('results');
+results.innerHTML='';
+data.elements.forEach(el=>{
+const clat=el.lat || (el.center&&el.center.lat);
+const clon=el.lon || (el.center&&el.center.lon);
+const name=(el.tags&&el.tags.name)||'Catholic Church';
+const addr=(el.tags&&el.tags['addr:street'])||'Address unavailable';
+const dist=miles(distance(lat,lon,clat,clon));
+results.innerHTML += `<div class="card"><h3>${name}</h3><p>📍 ${addr}</p><p>📏 ${dist} miles away</p><a target="_blank" href="https://maps.google.com/?q=${clat},${clon}">Directions</a></div>`;
+});
+document.getElementById('status').innerText='Search complete';
+}
+function findNearby(){
+navigator.geolocation.getCurrentPosition(p=>loadChurches(p.coords.latitude,p.coords.longitude),()=>alert('Location permission required'));
+}
+async function searchTown(){
+const town=document.getElementById('town').value;
+const r=await fetch('https://nominatim.openstreetmap.org/search?format=json&q='+encodeURIComponent(town));
+const data=await r.json();
+if(data.length){loadChurches(data[0].lat,data[0].lon);}
 }
 </script>
 </body>
